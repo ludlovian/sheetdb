@@ -2,7 +2,10 @@ const epochStartInSerial = 25569
 const msInDay = 24 * 60 * 60 * 1000
 const msInMinute = 60 * 1000
 
-export default class SerialDate {
+const toDate = s => SerialDate.fromSerial(s).localDate()
+const toSerial = d => SerialDate.fromLocalDate(d).serial
+
+class SerialDate {
   static fromSerial (n) {
     return new SerialDate(n)
   }
@@ -59,3 +62,6 @@ export default class SerialDate {
     return new Date(...parts)
   }
 }
+
+export default SerialDate
+export { toDate, toSerial }

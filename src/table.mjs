@@ -4,12 +4,9 @@ import clone from '@ludlovian/clone'
 import equal from '@ludlovian/equal'
 import sortBy from '@ludlovian/sortby'
 import Debug from '@ludlovian/debug'
-import SerialDate from './serial-date.mjs'
+import { toSerial, toDate } from './serial-date.mjs'
 import config from './config.mjs'
 import { getSheetRange, updateSheetRange, getRangeAddress } from './google.mjs'
-
-const toDate = s => SerialDate.fromSerial(s).localDate()
-const toSerial = d => SerialDate.fromLocalDate(d).serial
 
 export default class Table {
   #database
