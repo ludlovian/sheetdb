@@ -22,6 +22,8 @@ async function getSheetApi () {
 export async function getSheetRange ({ spreadsheetId, range }) {
   const sheets = _sheetApi ?? (await getSheetApi())
 
+  debug('Reading %s from %s', range, spreadsheetId)
+
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range,
@@ -36,11 +38,15 @@ export async function getSheetRange ({ spreadsheetId, range }) {
     throw Object.assign(new Error('Failed to read sheet'), { response })
   }
   /* c8 ignore stop */
-  return response.data.values
+  const data = response.data.values ?? []
+  debug('read %d rows', data.length)
+  return data
 }
 
 export async function updateSheetRange ({ spreadsheetId, range, data }) {
   const sheets = _sheetApi ?? (await getSheetApi())
+
+  debug('updating %s of %s with %d rows', range, spreadsheetId, data.length)
 
   const response = await sheets.spreadsheets.values.update({
     spreadsheetId,
@@ -59,6 +65,7 @@ export async function updateSheetRange ({ spreadsheetId, range, data }) {
     throw Object.assign(new Error('Failed to update sheet'), { response })
   }
   /* c8 ignore stop */
+  debug('updated')
 }
 
 export function getColumnName (col) {
