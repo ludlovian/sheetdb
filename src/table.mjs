@@ -20,6 +20,11 @@ export default class Table {
   #debug
   afterSave
 
+  // ----------------------------------------------------
+  //
+  // Construction
+  //
+
   constructor (database, name, defs) {
     assert.ok(defs && defs.name && defs.cols)
     this.#database = database
@@ -27,14 +32,6 @@ export default class Table {
     this.#columns = Table.#parseColumns(defs.cols)
     this.#sortFunction = Table.#parseSortFunction(defs.sort)
     this.#debug = Debug(`sheetdb:${name}`)
-  }
-
-  get database () {
-    return this.#database
-  }
-
-  get columns () {
-    return this.#columns.map(({ name, type }) => ({ name, type }))
   }
 
   static #parseColumns (colDefs) {
@@ -61,78 +58,23 @@ export default class Table {
     return fn
   }
 
-  static #normaliseCells (cells, nCols) {
-    const blankRow = Array.from({ length: nCols }, () => '')
-    cells = cells ?? []
-    for (let i = 0; i < cells.length; i++) {
-      const row = cells[i]
-      if (row.length < nCols) {
-        cells[i] = [...row, ...blankRow].slice(0, nCols)
-      }
-    }
+  // ----------------------------------------------------
+  //
+  // Getters
+  //
 
-    const lastRowEmpty = () =>
-      cells.length && cells[cells.length - 1].every(x => x === '')
-
-    while (lastRowEmpty()) {
-      cells.pop()
-    }
-    return cells
+  get database () {
+    return this.#database
   }
 
-  #getCache () {
-    if (!this.#lastCells) return undefined
-    if (Date.now() - this.#lastCellsTime > config.cacheTime) {
-      this.#clearCache()
-      return undefined
-    }
-    return this.#lastCells
+  get columns () {
+    return this.#columns.map(({ name, type }) => ({ name, type }))
   }
 
-  #clearCache () {
-    this.#lastCells = this.#lastCellsTime = undefined
-  }
-
-  #storeCache (cells) {
-    this.#lastCells = clone(cells)
-    this.#lastCellsTime = Date.now()
-    return cells
-  }
-
-  async #loadCells () {
-    const nCols = this.#columns.length
-    const range = this.#sheetName + '!' + getRangeAddress(2, 1, Infinity, nCols)
-    let cells = await this.database.exec(() =>
-      getSheetRange({
-        spreadsheetId: this.database.spreadsheetId,
-        range
-      })
-    )
-    cells = Table.#normaliseCells(cells, nCols)
-    this.#debug('%d rows loaded', cells.length)
-    return this.#storeCache(cells)
-  }
-
-  async #saveCells (cells, blankRows) {
-    blankRows = Math.max(0, blankRows)
-    const nCols = this.#columns.length
-    const trailer = Array.from({ length: blankRows }, () =>
-      Array.from({ length: nCols }, () => '')
-    )
-
-    const range =
-      this.#sheetName +
-      '!' +
-      getRangeAddress(2, 1, cells.length + trailer.length, nCols)
-    await this.database.exec(() =>
-      updateSheetRange({
-        spreadsheetId: this.database.spreadsheetId,
-        range,
-        data: [...cells, ...trailer]
-      })
-    )
-    this.#debug('%d rows written', cells.length)
-  }
+  // ----------------------------------------------------
+  //
+  // Public load/save API
+  //
 
   async load () {
     const cells = this.#getCache() ?? (await this.#loadCells())
@@ -167,6 +109,94 @@ export default class Table {
     if (this.afterSave) {
       await Promise.resolve(this.afterSave(this.data))
     }
+  }
+
+  // ----------------------------------------------------
+  //
+  // Cache of recently loaded cells
+  //
+
+  #getCache () {
+    if (!this.#lastCells) return undefined
+    if (Date.now() - this.#lastCellsTime > config.cacheTime) {
+      this.#clearCache()
+      return undefined
+    }
+    return this.#lastCells
+  }
+
+  #clearCache () {
+    this.#lastCells = this.#lastCellsTime = undefined
+  }
+
+  #storeCache (cells) {
+    this.#lastCells = clone(cells)
+    this.#lastCellsTime = Date.now()
+    return cells
+  }
+
+  // ----------------------------------------------------
+  //
+  // Loading of cells from sheet
+  //
+
+  async #loadCells () {
+    const nCols = this.#columns.length
+    const range = this.#sheetName + '!' + getRangeAddress(2, 1, Infinity, nCols)
+    let cells = await this.database.exec(() =>
+      getSheetRange({
+        spreadsheetId: this.database.spreadsheetId,
+        range
+      })
+    )
+    cells = Table.#normaliseCells(cells, nCols)
+    this.#debug('%d rows loaded', cells.length)
+    return this.#storeCache(cells)
+  }
+
+  static #normaliseCells (cells, nCols) {
+    const blankRow = Array.from({ length: nCols }, () => '')
+    cells = cells ?? []
+    for (let i = 0; i < cells.length; i++) {
+      const row = cells[i]
+      if (row.length < nCols) {
+        cells[i] = [...row, ...blankRow].slice(0, nCols)
+      }
+    }
+
+    const lastRowEmpty = () =>
+      cells.length && cells[cells.length - 1].every(x => x === '')
+
+    while (lastRowEmpty()) {
+      cells.pop()
+    }
+    return cells
+  }
+
+  // ----------------------------------------------------
+  //
+  // Saving of cells to sheet
+  //
+
+  async #saveCells (cells, blankRows) {
+    blankRows = Math.max(0, blankRows)
+    const nCols = this.#columns.length
+    const trailer = Array.from({ length: blankRows }, () =>
+      Array.from({ length: nCols }, () => '')
+    )
+
+    const range =
+      this.#sheetName +
+      '!' +
+      getRangeAddress(2, 1, cells.length + trailer.length, nCols)
+    await this.database.exec(() =>
+      updateSheetRange({
+        spreadsheetId: this.database.spreadsheetId,
+        range,
+        data: [...cells, ...trailer]
+      })
+    )
+    this.#debug('%d rows written', cells.length)
   }
 }
 
