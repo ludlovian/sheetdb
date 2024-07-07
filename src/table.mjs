@@ -18,6 +18,7 @@ export default class Table {
   #lastCells
   #lastCellsTime
   #debug
+  afterSave
 
   constructor (database, name, defs) {
     assert.ok(defs && defs.name && defs.cols)
@@ -158,12 +159,14 @@ export default class Table {
     const prevCells = this.#getCache() ?? (await this.#loadCells())
     if (equal(prevCells, cells)) {
       this.#debug('No change. Skipping update of %d rows', cells.length)
-      return
+    } else {
+      this.#storeCache(cells)
+      const nBlanks = Math.max(0, prevCells.length - cells.length)
+      await this.#saveCells(cells, nBlanks)
     }
-
-    this.#storeCache(cells)
-    const nBlanks = Math.max(0, prevCells.length - cells.length)
-    await this.#saveCells(cells, nBlanks)
+    if (this.afterSave) {
+      await Promise.resolve(this.afterSave(this.data))
+    }
   }
 }
 
