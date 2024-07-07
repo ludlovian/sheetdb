@@ -32,6 +32,10 @@ export default class Table {
     return this.#database
   }
 
+  get columns () {
+    return this.#columns.map(({ name, type }) => ({ name, type }))
+  }
+
   static #parseColumns (colDefs) {
     const cols = []
     for (const colDef of colDefs.split(/[, ]/)) {
