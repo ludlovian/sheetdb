@@ -21,6 +21,12 @@ suite('Database', { concurrency: false }, () => {
         'ticker,account,who,date:date,qty:number,cost:money,gain:money,proceeds:money,notes',
       sort: 'date,who,account,ticker'
     })
+    db.addTable('positions', {
+      name: 'Positions',
+      cols: 'ticker,account,who,qty:number',
+      sort: 'ticker,account,who',
+      unique: 'ticker,account,who'
+    })
   })
 
   test('Read table', async () => {
@@ -53,5 +59,18 @@ suite('Database', { concurrency: false }, () => {
     table.data[0].notes = undefined
 
     await table.save(table.data, 'force')
+  })
+
+  test('unique rows', async () => {
+    const table = db.tables.positions
+    await table.load()
+    const ticker = 'zzz'
+    const who = 'pix'
+    const account = 'pix'
+    table.data.push({ ticker, account, who, qty: 111 })
+    table.data.push({ ticker, account, who, qty: 222 })
+    await table.save()
+
+    assert.ok((table.data.filter(r => r.who === who).length = 1))
   })
 })

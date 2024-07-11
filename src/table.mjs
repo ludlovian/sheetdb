@@ -31,6 +31,7 @@ export default class Table {
     this.#sheetName = defs.name
     this.#columns = Table.#parseColumns(defs.cols)
     this.#sortFunction = Table.#parseSortFunction(defs.sort)
+    Table.#parseUnique(this.#columns, defs.unique)
     this.#debug = Debug(`sheetdb:${name}`)
   }
 
@@ -56,6 +57,13 @@ export default class Table {
       }
     }
     return fn
+  }
+
+  static #parseUnique (cols, unique) {
+    for (const name of (unique ?? '').split(',')) {
+      const col = cols.find(c => c.name === name)
+      if (col) col.unique = true
+    }
   }
 
   // ----------------------------------------------------
@@ -95,6 +103,7 @@ export default class Table {
     if (this.#sortFunction) {
       this.data = this.data.sort(this.#sortFunction)
     }
+    this.data = this.#checkUnique(this.data)
     const cells = this.data.map(row =>
       this.#columns.map(col => col.toSheet(row[col.name]))
     )
@@ -109,6 +118,17 @@ export default class Table {
     if (this.afterSave) {
       await Promise.resolve(this.afterSave(this.data))
     }
+  }
+
+  #checkUnique (data) {
+    const cols = this.#columns.filter(c => c.unique)
+    if (!cols.length) return data
+    const uniqued = new Map()
+    for (const row of data) {
+      const key = cols.map(col => row[col.name]).join('|')
+      uniqued.set(key, row)
+    }
+    return [...uniqued.values()]
   }
 
   // ----------------------------------------------------
