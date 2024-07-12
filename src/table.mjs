@@ -1,17 +1,17 @@
 import assert from 'node:assert'
-import decimal from '@ludlovian/decimal'
 import clone from '@ludlovian/clone'
 import equal from '@ludlovian/equal'
 import sortBy from '@ludlovian/sortby'
 import Debug from '@ludlovian/debug'
 import Row from './row.mjs'
-import { toSerial, toDate } from './serial-date.mjs'
 import config from './config.mjs'
 import { getSheetRange, updateSheetRange, getRangeAddress } from './google.mjs'
 
 const customInspect = Symbol.for('nodejs.util.inspect.custom')
 
 export default class Table {
+  static types = {}
+
   database
   name
   #debug
@@ -285,30 +285,12 @@ function parseColumns (colDefs) {
   const cols = []
   for (const colDef of colDefs.split(/[, ]/)) {
     const [name, colType = 'string'] = colDef.split(':')
-    assert.ok(COL_TYPES[colType])
+    assert.ok(Table.types[colType])
     cols.push({
       name,
       type: colType,
-      ...COL_TYPES[colType]
+      ...Table.types[colType]
     })
   }
   return cols
-}
-const COL_TYPES = {
-  string: {
-    toSheet: x => (x === undefined ? '' : x + ''),
-    fromSheet: x => (x === '' ? undefined : x)
-  },
-  number: {
-    toSheet: x => (x === undefined ? '' : x),
-    fromSheet: x => (x === '' ? undefined : x)
-  },
-  date: {
-    toSheet: x => (x === undefined ? '' : toSerial(x)),
-    fromSheet: x => (x === '' ? undefined : toDate(x))
-  },
-  money: {
-    toSheet: x => (x === undefined ? '' : Number(x.toString())),
-    fromSheet: x => (x === '' ? undefined : decimal(x).withPrecision(2))
-  }
 }

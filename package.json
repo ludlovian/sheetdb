@@ -16,13 +16,13 @@
     "@ludlovian/clone": "github:ludlovian/clone",
     "@ludlovian/configure": "github:ludlovian/configure",
     "@ludlovian/debug": "github:ludlovian/debug",
-    "@ludlovian/decimal": "github:ludlovian/decimal",
     "@ludlovian/equal": "github:ludlovian/equal",
     "@ludlovian/lock": "github:ludlovian/lock",
     "@ludlovian/sortby": "github:ludlovian/sortby"
   },
   "devDependencies": {
-    "@googleapis/sheets": "^9.0.0"
+    "@googleapis/sheets": "^9.0.0",
+    "@ludlovian/decimal": "github:ludlovian/decimal"
   },
   "peerDependencies": {
     "@googleapis/sheets": ">5.0.0"

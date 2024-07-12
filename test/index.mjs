@@ -9,6 +9,17 @@ const spreadsheetId = '11py3fCC326GoQBbBIQpaqdLswk-C4MD059sB8z97044'
 suite('Database', { concurrency: false }, () => {
   let db
   before(() => {
+    Database.registerType('money', {
+      fromSheet: x => (x === '' ? undefined : decimal(x).withPrecision(2)),
+      toSheet: x => (x === undefined ? '' : +x)
+    })
+    Database.registerType('date', {
+      fromSheet: x =>
+        x === '' ? undefined : new Date((Math.round(x) - 25_569) * 86_400_000),
+      toSheet: x =>
+        x === undefined ? '' : Math.round(+x / 86_400_000) + 25_569
+    })
+
     db = new Database(spreadsheetId)
     db.addTable('stocks', {
       name: 'Stocks',

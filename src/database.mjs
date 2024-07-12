@@ -8,6 +8,10 @@ export class Database {
   #tables = {}
   #debug = Debug('sheetdb:database')
 
+  static registerType (type, { fromSheet, toSheet }) {
+    Table.types[type] = { fromSheet, toSheet }
+  }
+
   constructor (spreadsheetId) {
     this.#spreadsheetId = spreadsheetId
   }
@@ -30,3 +34,13 @@ export class Database {
     return this
   }
 }
+
+Database.registerType('string', {
+  toSheet: x => (x === undefined ? '' : x + ''),
+  fromSheet: x => (x === '' ? undefined : x)
+})
+
+Database.registerType('number', {
+  toSheet: x => (x === undefined ? '' : +x),
+  fromSheet: x => (x === '' ? undefined : +x)
+})
