@@ -15,8 +15,8 @@ Creates a new database
 
 Adds a new table to the database. Definitions are:
 - `name`: the sheet name in the google spreadsheet
-- `columns`: String. Comma/space delimited list of column defintions
-- `sort`: Optional string. Comma/space delimited list of columns to sort on
+- `columns`: String. Comma delimited list of column defintions
+- `key`: String. Comma delimited list of the primary key. If omitted then 1-based `rowid` will be used
 
 Column definitions are `<name>[:<type>]`. Types can be:
 - `string` (also the default if not given
@@ -28,6 +28,8 @@ Column definitions are `<name>[:<type>]`. Types can be:
 
 An object with all the defined tables under it
 
+---
+
 ## Table
 
 Created by `database.addTable`, this represents a sheet of data
@@ -36,17 +38,43 @@ Created by `database.addTable`, this represents a sheet of data
 
 The owning `Database`
 
-### async .load() => data
+### async .load(force)
 
-Loads the data.
+Loads the data. If force is truthy, then we will not use the cache of cells
+
+### async .save(force)
+
+Saves the data. If force is truthy, then we will not use the cache of cells
 
 ### .data
 
-The current data.
+All the current rows ( a synonym for `[....rows.all]` )
 
-### async .save([data], force)
+### .rows
 
-Saves the given data (or `.data`) to the table
+An object with Sets as follows
+- `all`: all the Rows
+- `untouched`: Rows which have not been touched since the last load
+- `added`: Rows which have been added
+- `changed`: Rows which have actually been updated (not just `.set`)
+- `deleted`: Rows which have been deleted
 
-If `force` is truthy, it will bypass the cache and reload the table
-before writing to it.
+### .get(key)
+
+Returns the row matching this primary key. WIll add a new one if needed.
+
+An integer is a shortcut for { rowid } for tables with that the primary key
+
+---
+
+## Row
+
+These are the rows of data.
+
+### .set(data)
+
+Updates the row with this data, but only if changed.
+
+### .delete()
+
+Removes the row from the table.

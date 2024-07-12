@@ -13,19 +13,17 @@ suite('Database', { concurrency: false }, () => {
     db.addTable('stocks', {
       name: 'Stocks',
       cols: 'ticker,name,incomeType,notes,ccy,factor:number',
-      sort: 'ticker'
+      key: 'ticker'
     })
     db.addTable('trades', {
       name: 'Trades',
       cols:
-        'ticker,account,who,date:date,qty:number,cost:money,gain:money,proceeds:money,notes',
-      sort: 'date,who,account,ticker'
+        'ticker,account,who,date:date,qty:number,cost:money,gain:money,proceeds:money,notes'
     })
     db.addTable('positions', {
       name: 'Positions',
       cols: 'ticker,account,who,qty:number',
-      sort: 'ticker,account,who',
-      unique: 'ticker,account,who'
+      key: 'ticker,account,who'
     })
   })
 
@@ -51,26 +49,12 @@ suite('Database', { concurrency: false }, () => {
   })
 
   test('update table', async () => {
-    const table = db.tables.trades
-    table.data[0].notes = 'blah'
-    await table.save()
-
-    await table.save(table.data)
-    table.data[0].notes = undefined
-
-    await table.save(table.data, 'force')
-  })
-
-  test('unique rows', async () => {
-    const table = db.tables.positions
+    const table = db.tables.stocks
     await table.load()
-    const ticker = 'zzz'
-    const who = 'pix'
-    const account = 'pix'
-    table.data.push({ ticker, account, who, qty: 111 })
-    table.data.push({ ticker, account, who, qty: 222 })
+    table.get({ ticker: 'NCYF' }).set({ notes: 'the OG' })
     await table.save()
-
-    assert.ok((table.data.filter(r => r.who === who).length = 1))
+    await table.save()
+    table.get({ ticker: 'NCYF' }).set({ notes: undefined })
+    await table.save('force')
   })
 })
